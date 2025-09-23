@@ -1,0 +1,49 @@
+#include <Arduino.h>       // Librairie de base Arduino : Serial, delay, millis, etc.
+#include <painlessMesh.h>  // Librairie pour créer un réseau mesh avec ESP32
+
+// Paramètres du réseau mesh
+#define MESH_PREFIX   "monReseauMesh"   // Nom du réseau Wi-Fi mesh
+#define MESH_PASSWORD "12345678"        // Mot de passe du réseau mesh
+#define MESH_PORT     5555              // Port utilisé pour la communication mesh
+
+painlessMesh mesh;  // Création de l'objet mesh qui gère tout le réseau
+
+// Fonction appelée à chaque fois qu'un message est reçu
+// 'from' : ID du node qui a envoyé le message
+// 'msg'  : contenu du message reçu
+void receivedCallback(uint32_t from, String &msg) {
+  Serial.printf("Message reçu de %u : %s\n", from, msg.c_str()); // Affiche le message reçu sur le moniteur série
+}
+void newConnectionCallback(uint32_t nodeId) {
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+void changedConnectionCallback() {
+  Serial.printf("Changed connections\n");
+}
+
+void setup() {
+  Serial.begin(115200);  // Démarrage du port série à 115200 bauds
+  delay(1000);            // Petit délai pour que le Serial soit prêt
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+
+
+  // Initialisation du réseau mesh
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT); // Configure le réseau avec le nom, mot de passe et port
+  mesh.onReceive(&receivedCallback);               // Associe la fonction de réception des messages
+
+  // Envoi d'un message de test au démarrage pour que les autres nodes le reçoivent
+  mesh.sendBroadcast("Hello depuis un ESP32 !");
+}
+
+void loop() {
+  mesh.update();  // Nécessaire : permet au mesh de traiter les messages entrants et sortants
+
+  // Exemple : envoyer un message toutes les 5 secondes
+  static unsigned long lastSend = 0;          // Variable pour mémoriser le dernier envoi
+  if (millis() - lastSend > 5000) {           // Vérifie si 5 secondes se sont écoulées
+    lastSend = millis();                       // Met à jour le temps du dernier envoi
+    mesh.sendBroadcast("Ping depuis ESP32 !"); // Envoie le message à tous les nodes du réseau
+  }
+}
+
