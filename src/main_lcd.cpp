@@ -35,7 +35,7 @@ void displayMessageOnLCD(uint32_t from, String msg) {
   if (msg.length() > LCD_COLS) {
     lcd.print(msg.substring(0, LCD_COLS));
   } else {
-    lcd.print(msg);
+    lcd.print(msg); 
   }
 }
 
