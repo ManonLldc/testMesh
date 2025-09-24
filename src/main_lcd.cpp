@@ -39,7 +39,7 @@ void displayMessageOnLCD(uint32_t from, String msg) {
   }
 }
 
-// Fonction pour faire défiler un message long
+// Fonction pour faire défiler un message long au besoin
 void scrollMessage(String msg) {
   if (msg.length() > LCD_COLS) {
     static int scrollPosition = 0;
