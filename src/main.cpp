@@ -65,45 +65,40 @@ void receivedMsg(uint32_t from, String &msg) {
 // ----------------------
 // Génération de la page web
 // ----------------------
-void handleRoot() {
-  String html = R"rawliteral(
-<!doctype html>
-<html lang='fr'>
-<head>
-  <meta charset='utf-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1'>
-  <title>Vigil</title>
-  <link rel="stylesheet" href="/css/reset.css">
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-  <header>
-    <button class='buttonleft'>Annonces</button>
-    <button class='buttonright'>Nous contacter</button>
-  </header>
-  <main>
-    <div class='containerul'>
-      <ul class='chatlist'>
-)rawliteral";
+void handleRoot(){
+  // Début de la page HTML et CSS intégré
+  String html = "<!doctype html>
+                <html lang='fr'>
 
-  for (int i = 0; i < MAX_MSG; i++) {
-    int idx = (msgIndex + i) % MAX_MSG;
-    if (messages[idx] != "") {
-      html += "<div class='msg'>" + messages[idx] + "</div>";
-    }
+                  <head>
+                    <meta charset='utf-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1'>
+                    <title>Vigil</title>
+                    <link rel='stylesheet' href='./css/reset.css'>
+                    <link rel='stylesheet' href='./css/style.css'>
+                  </head>"
+                 "<body><header>
+                      <button class='buttonleft'>Annonces</button>
+                      <button class='buttonright'>Nous contacter</button>
+                    </header>
+
+                    <main>
+                      <div class='containerul'>
+                        <ul class='chatlist'>
+                        </ul>
+                      </div>";
+
+  // Affichage des messages dans l'ordre chronologique
+  for(int i=0;i<MAX_MSG;i++){
+    int idx = (msgIndex + i) % MAX_MSG;       // Calcul de l'index pour afficher les messages correctement
+    if(messages[idx] != "") html += "<div class='msg'>" + messages[idx] + "</div>"; // Affiche le message
   }
 
-  html += R"rawliteral(
-      </ul>
-    </div>
-    <form method='POST' action='/send'>
-      <textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>
-      <input class='submit-button' type='submit' value='Envoyez'>
-    </form>
-  </main>
-</body>
-</html>
-)rawliteral";
+  // Formulaire pour envoyer un message
+  html += "<form method='POST' action='/send'>"
+          "<textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>"
+          "<input class='submit-button' type='submit' value='Envoyez'>"
+          "</form></main></body></html>";
 
   server.send(200, "text/html", html);
 }
