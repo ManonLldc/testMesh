@@ -1,49 +1,122 @@
-#include <Arduino.h>       // Librairie de base Arduino : Serial, delay, millis, etc.
-#include <painlessMesh.h>  // Librairie pour créer un réseau mesh avec ESP32
+#include <Arduino.h>       // Bibliothèque de base Arduino
+#include <WiFi.h>          // Gestion du Wi-Fi sur l'ESP32
+#include <WebServer.h>     // Serveur web HTTP
+#include <painlessMesh.h>  // Réseau mesh ESP32
 
+// =========================
 // Paramètres du réseau mesh
-#define MESH_PREFIX   "monReseauMesh"   // Nom du réseau Wi-Fi mesh
-#define MESH_PASSWORD "12345678"        // Mot de passe du réseau mesh
-#define MESH_PORT     5555              // Port utilisé pour la communication mesh
+// =========================
+const char* MESH_PREFIX   = "monReseauMesh"; // Nom du réseau mesh
+const char* MESH_PASSWORD = "12345678";      // Mot de passe du mesh
+const int   MESH_PORT     = 5555;            // Port du mesh
 
-painlessMesh mesh;  // Création de l'objet mesh qui gère tout le réseau
+painlessMesh mesh;          
+WebServer server(80);       
 
-// Fonction appelée à chaque fois qu'un message est reçu
-// 'from' : ID du node qui a envoyé le message
-// 'msg'  : contenu du message reçu
+// =========================
+// Gestion des messages
+// =========================
+const int MAX_MESSAGES = 20;     // Nombre max de messages stockés
+String messages[MAX_MESSAGES];   // Tableau circulaire des messages
+int messageIndex = 0;            // Position du prochain message
+
+// =========================
+// Callback : message reçu
+// =========================
 void receivedCallback(uint32_t from, String &msg) {
-  Serial.printf("Message reçu de %u : %s\n", from, msg.c_str()); // Affiche le message reçu sur le moniteur série
-}
-void newConnectionCallback(uint32_t nodeId) {
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-}
-void changedConnectionCallback() {
-  Serial.printf("Changed connections\n");
+  String formattedMsg = "ESP32 " + String(from) + ": " + msg;
+  Serial.println(formattedMsg);
+
+  messages[messageIndex] = formattedMsg;
+  messageIndex = (messageIndex + 1) % MAX_MESSAGES;
 }
 
-void setup() {
-  Serial.begin(115200);  // Démarrage du port série à 115200 bauds
-  delay(1000);            // Petit délai pour que le Serial soit prêt
-  mesh.onNewConnection(&newConnectionCallback);
-  mesh.onChangedConnections(&changedConnectionCallback);
+// =========================
+// Génération de la page web
+// =========================
+void handleRoot() {
+  String html = R"rawliteral(
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset='UTF-8'>
+      <title>ESP32 Mesh Chat</title>
+      // <link rel='stylesheet' href='/ui/css/reset.css'>
+      // <link rel='stylesheet' href='/ui/css/style.css'>
+    </head>
+    <body>
+      <h2>ESP32 Mesh Chat</h2>
+      <form action='/send' method='POST'>
+        <input type='text' id='msgInput' name='message' placeholder='Écris ton message' autofocus>
+        <input type='submit' value='Envoyer'>
+      </form>
+      <ul>
+  )rawliteral";
 
-
-  // Initialisation du réseau mesh
-  mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT); // Configure le réseau avec le nom, mot de passe et port
-  mesh.onReceive(&receivedCallback);               // Associe la fonction de réception des messages
-
-  // Envoi d'un message de test au démarrage pour que les autres nodes le reçoivent
-  mesh.sendBroadcast("Hello depuis un ESP32 !");
-}
-
-void loop() {
-  mesh.update();  // Nécessaire : permet au mesh de traiter les messages entrants et sortants
-
-  // Exemple : envoyer un message toutes les 5 secondes
-  static unsigned long lastSend = 0;          // Variable pour mémoriser le dernier envoi
-  if (millis() - lastSend > 5000) {           // Vérifie si 5 secondes se sont écoulées
-    lastSend = millis();                       // Met à jour le temps du dernier envoi
-    mesh.sendBroadcast("Ping depuis ESP32 !"); // Envoie le message à tous les nodes du réseau
+  for(int i = 0; i < MAX_MESSAGES; i++) {
+    if(messages[i] != "") {
+      html += "<li>" + messages[i] + "</li>";
+    }
   }
+
+  html += R"rawliteral(
+      </ul>
+    </body>
+    </html>
+  )rawliteral";
+
+  server.send(200, "text/html", html);
 }
 
+// =========================
+// Envoi d’un message
+// =========================
+void handleSend() {
+  if(server.hasArg("message")) {
+    String msg = server.arg("message");
+    mesh.sendBroadcast(msg);
+    receivedCallback(mesh.getNodeId(), msg);
+  }
+  server.sendHeader("Location", "/");
+  server.send(303, "text/plain", "");
+}
+
+// =========================
+// Feuille de style CSS
+// =========================
+void handleCSS() {
+  String css = R"rawliteral(
+    body { font-family: Arial, sans-serif; background:#f4f4f4; color:#333; margin:20px; }
+  )rawliteral";
+
+  server.send(200, "text/css", css);
+}
+
+// =========================
+// Setup
+// =========================
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Démarrage ESP32 Mesh Chat...");
+
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
+  mesh.onReceive(&receivedCallback);
+
+  WiFi.softAP("ESP32-MeshChat", "12345678");
+  Serial.println("IP du point d'accès : " + WiFi.softAPIP().toString());
+
+  server.on("/", handleRoot);
+  server.on("/send", handleSend);
+  server.on("/style.css", handleCSS);
+  server.begin();
+
+  Serial.println("Serveur web démarré");
+}
+
+// =========================
+// Loop
+// =========================
+void loop() {
+  mesh.update();
+  server.handleClient();
+}
