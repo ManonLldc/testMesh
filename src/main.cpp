@@ -89,7 +89,7 @@ void handleRoot() {
   for (int i = 0; i < MAX_MSG; i++) {
     int idx = (msgIndex + i) % MAX_MSG;
     if (messages[idx] != "") {
-      html += "<div class='msg'>" + messages[idx] + "</div>";
+      html += "<li class='lichatlist'>" + messages[idx] + "</li>";
     }
   }
 
