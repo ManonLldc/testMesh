@@ -59,13 +59,26 @@ void receivedMsg(uint32_t from, String &msg){
 // ----------------------
 void handleRoot(){
   // Début de la page HTML et CSS intégré
-  String html = "<html><head><meta charset='UTF-8'><title>VIGIL</title>"
-                "<style>"
-                "body{font-family:Arial;background:#f4f4f4;margin:20px;}"
-                ".msg{padding:5px;margin:5px;background:#e0e0e0;border-radius:5px;}"
-                "input[type=text]{width:70%;padding:10px;}"
-                "input[type=submit]{padding:10px 20px;}"
-                "</style></head><body><h2>ESP32 Mesh Chat</h2>";
+  String html = "<!doctype html>
+                <html lang='fr'>
+
+                  <head>
+                    <meta charset='utf-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1'>
+                    <title>Vigil</title>
+                    <link rel='stylesheet' href='./css/reset.css'>
+                    <link rel='stylesheet' href='./css/style.css'>
+                  </head>"
+                 "<body><header>
+                      <button class='buttonleft'>Annonces</button>
+                      <button class='buttonright'>Nous contacter</button>
+                    </header>
+
+                    <main>
+                      <div class='containerul'>
+                        <ul class='chatlist'>
+                        </ul>
+                      </div>";
 
   // Affichage des messages dans l'ordre chronologique
   for(int i=0;i<MAX_MSG;i++){
@@ -75,9 +88,9 @@ void handleRoot(){
 
   // Formulaire pour envoyer un message
   html += "<form method='POST' action='/send'>"
-          "<input type='text' name='message' required>"
-          "<input type='submit' value='Envoyer'>"
-          "</form></body></html>";
+          "<textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>"
+          "<input class='submit-button' type='submit' value='Envoyez'>"
+          "</form></main></body></html>";
 
   server.send(200,"text/html",html);          // Envoie la page au navigateur
 }
