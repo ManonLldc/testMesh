@@ -1,135 +1,152 @@
-#include <Arduino.h>        // Bibliothèque de base Arduino
-#include <WiFi.h>           // Gestion du Wi-Fi sur ESP32
-#include <WebServer.h>      // Serveur web HTTP
-#include <painlessMesh.h>   // Réseau mesh ESP32
-#include <LittleFS.h>       // Système de fichiers pour stocker l'historique
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <painlessMesh.h>
+#include <LittleFS.h>
 
 // ----------------------
 // Paramètres réseau mesh
 // ----------------------
-const char* MESH_SSID = "monReseauMesh";   // Nom du réseau mesh
-const char* MESH_PASS = "12345678";        // Mot de passe du mesh
-const int MESH_PORT = 5555;                // Port de communication mesh
+const char* MESH_SSID = "monReseauMesh";
+const char* MESH_PASS = "12345678";
+const int MESH_PORT = 5555;
 
-painlessMesh mesh;          // Objet pour gérer le réseau mesh
-WebServer server(80);       // Serveur web qui écoute sur le port 80
+painlessMesh mesh;
+WebServer server(80);
 
 // ----------------------
 // Gestion des messages
 // ----------------------
-const int MAX_MSG = 20;     // Nombre maximum de messages stockés
-String messages[MAX_MSG];    // Tableau circulaire pour stocker les messages
-int msgIndex = 0;            // Index du prochain message à écrire
+const int MAX_MSG = 20;
+String messages[MAX_MSG];
+int msgIndex = 0;
 
 // ----------------------
-// Lecture de l'historique depuis LittleFS
-// LittleFS est le système de fichiers flash intégré à l’ESP32.
-// En ouvrant le fichier avec File f = LittleFS.open("/messages.txt", "r");, 
-// on peut relire les messages précédemment enregistrés pour les remettre dans le tableau de messages au démarrage.
+// Sauvegarde de l'historique
+// ----------------------
+void saveHistory() {
+  File f = LittleFS.open("/messages.txt", "w");
+  if (!f) return;
+  for (int i = 0; i < MAX_MSG; i++) {
+    if (messages[i] != "") {
+      f.println(messages[i]);
+    }
+  }
+  f.close();
+}
+
+// ----------------------
+// Lecture de l'historique
 // ----------------------
 void loadHistory() {
-  if(!LittleFS.begin(true)) return;        // Monte le système de fichiers LittleFS
-  if(!LittleFS.exists("/messages.txt")) return; // Si aucun fichier, on quitte
-  
-// La méthode open() sert à ouvrir un fichier existant ou en créer un nouveau selon le mode choisi.
-// Elle renvoie un objet File, qui représente le fichier et permet de lire, écrire ou manipuler les données.
-  File f = LittleFS.open("/messages.txt", "r"); // Ouvre le fichier en lecture
-  int idx = 0;                                 // Index pour remplir le tableau
-  while(f.available() && idx < MAX_MSG){       // Tant que le fichier a des lignes et qu'on n'a pas dépassé MAX_MSG
-    messages[idx++] = f.readStringUntil('\n'); // Lire chaque ligne et la stocker dans le tableau
+  if (!LittleFS.begin(true)) return;
+  if (!LittleFS.exists("/messages.txt")) return;
+
+  File f = LittleFS.open("/messages.txt", "r");
+  int idx = 0;
+  while (f.available() && idx < MAX_MSG) {
+    messages[idx++] = f.readStringUntil('\n');
   }
-  f.close();                                   // Ferme le fichier
-  msgIndex = idx % MAX_MSG;                    // Met à jour l'index pour le prochain message
+  f.close();
+  msgIndex = idx % MAX_MSG;
 }
 
 // ----------------------
 // Fonction appelée quand un message est reçu via mesh
-// uint32_t est un type de donnée entier sur 32 bits la valeur ne peut être que positive ou nulle.
-// Contrairement à un entier, il ne peut pas stocker de nombres négatifs.
 // ----------------------
-void receivedMsg(uint32_t from, String &msg){
-  String m = String(from) + ": " + msg;       // Formate le message avec l'ID du noeud
-  Serial.println(m);                           // Affiche dans le moniteur série
-  messages[msgIndex] = m;                      // Stocke dans le tableau circulaire
-  msgIndex = (msgIndex + 1) % MAX_MSG;        // Passe à l'index suivant (boucle si fin atteinte)
+void receivedMsg(uint32_t from, String &msg) {
+  String m = String(from) + ": " + msg;
+  Serial.println(m);
+  messages[msgIndex] = m;
+  msgIndex = (msgIndex + 1) % MAX_MSG;
+  saveHistory();
 }
 
 // ----------------------
 // Génération de la page web
 // ----------------------
-void handleRoot(){
-  // Début de la page HTML et CSS intégré
-  String html = "<!doctype html>
-                <html lang='fr'>
+void handleRoot() {
+  String html = R"rawliteral(
+<!doctype html>
+<html lang='fr'>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <title>Vigil</title>
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <button class='buttonleft'>Annonces</button>
+    <button class='buttonright'>Nous contacter</button>
+  </header>
+  <main>
+    <div class='containerul'>
+      <ul class='chatlist'>
+)rawliteral";
 
-                  <head>
-                    <meta charset='utf-8'>
-                    <meta name='viewport' content='width=device-width, initial-scale=1'>
-                    <title>Vigil</title>
-                    <link rel='stylesheet' href='./css/reset.css'>
-                    <link rel='stylesheet' href='./css/style.css'>
-                  </head>"
-                 "<body><header>
-                      <button class='buttonleft'>Annonces</button>
-                      <button class='buttonright'>Nous contacter</button>
-                    </header>
-
-                    <main>
-                      <div class='containerul'>
-                        <ul class='chatlist'>
-                        </ul>
-                      </div>";
-
-  // Affichage des messages dans l'ordre chronologique
-  for(int i=0;i<MAX_MSG;i++){
-    int idx = (msgIndex + i) % MAX_MSG;       // Calcul de l'index pour afficher les messages correctement
-    if(messages[idx] != "") html += "<div class='msg'>" + messages[idx] + "</div>"; // Affiche le message
+  for (int i = 0; i < MAX_MSG; i++) {
+    int idx = (msgIndex + i) % MAX_MSG;
+    if (messages[idx] != "") {
+      html += "<div class='msg'>" + messages[idx] + "</div>";
+    }
   }
 
-  // Formulaire pour envoyer un message
-  html += "<form method='POST' action='/send'>"
-          "<textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>"
-          "<input class='submit-button' type='submit' value='Envoyez'>"
-          "</form></main></body></html>";
+  html += R"rawliteral(
+      </ul>
+    </div>
+    <form method='POST' action='/send'>
+      <textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>
+      <input class='submit-button' type='submit' value='Envoyez'>
+    </form>
+  </main>
+</body>
+</html>
+)rawliteral";
 
-  server.send(200,"text/html",html);          // Envoie la page au navigateur
+  server.send(200, "text/html", html);
 }
 
 // ----------------------
-// Fonction appelée quand un message est envoyé via le formulaire
+// Gestion envoi message
 // ----------------------
-void handleSend(){
-  if(server.hasArg("message")){               // Vérifie si le champ "message" existe
-    String msg = server.arg("message");       // Récupère le texte saisi
-    mesh.sendBroadcast(msg);                  // Envoie le message à tous les ESP32 du réseau mesh
-    receivedMsg(mesh.getNodeId(), msg);      // Ajoute le message localement
+void handleSend() {
+  if (server.hasArg("chatbox")) {
+    String msg = server.arg("chatbox");
+    mesh.sendBroadcast(msg);
+    receivedMsg(mesh.getNodeId(), msg);
   }
-  server.sendHeader("Location","/");          // Redirection vers la page principale
-  server.send(303,"text/plain","");           // Code HTTP 303 pour la redirection
+  server.sendHeader("Location", "/");
+  server.send(303, "text/plain", "");
 }
 
 // ----------------------
-// Setup : initialisation
+// Setup
 // ----------------------
-void setup(){
-  Serial.begin(115200);                        // Démarre le moniteur série
-  loadHistory();                               // Charge l'historique des messages
+void setup() {
+  Serial.begin(115200);
+  loadHistory();
 
-  mesh.init(MESH_SSID, MESH_PASS, MESH_PORT); // Initialise le réseau mesh
-  mesh.onReceive(&receivedMsg);               // Déclare la fonction appelée pour chaque message reçu
+  mesh.init(MESH_SSID, MESH_PASS, MESH_PORT);
+  mesh.onReceive(&receivedMsg);
 
-  WiFi.softAP("ESP32-MeshChat","12345678");  // Crée un point d'accès Wi-Fi
-  Serial.println("IP: "+WiFi.softAPIP().toString()); // Affiche l'IP
+  WiFi.softAP("ESP32-MeshChat", "12345678");
+  Serial.println("IP: " + WiFi.softAPIP().toString());
 
-  server.on("/", handleRoot);                 // Page principale
-  server.on("/send", handleSend);            // Route pour envoyer un message
-  server.begin();                             // Démarre le serveur web
+  server.on("/", handleRoot);
+  server.on("/send", handleSend);
+
+  // Serve les fichiers CSS depuis LittleFS
+  server.serveStatic("/css/", LittleFS, "/css/");
+
+  server.begin();
 }
 
 // ----------------------
-// Loop : exécuté en continu
+// Loop
 // ----------------------
-void loop(){
-  mesh.update();         // Actualise le réseau mesh
-  server.handleClient(); // Gère les requêtes HTTP entrantes
+void loop() {
+  mesh.update();
+  server.handleClient();
 }
