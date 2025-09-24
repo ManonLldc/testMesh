@@ -3,6 +3,7 @@
 #include <WebServer.h>
 #include <painlessMesh.h>
 #include <LittleFS.h>
+#include "led.h"
 
 // ----------------------
 // Paramètres réseau mesh
@@ -60,6 +61,10 @@ void receivedMsg(uint32_t from, String &msg) {
   messages[msgIndex] = m;
   msgIndex = (msgIndex + 1) % MAX_MSG;
   saveHistory();
+  for (int i = 0; i < 5; i++) {   // 5 cycles
+    ledGradient(80);
+  }
+  ledOff();
 }
 
 // ----------------------
@@ -141,6 +146,8 @@ void setup() {
   server.serveStatic("/css/", LittleFS, "/css/");
 
   server.begin();
+  
+  ledInit();
 }
 
 // ----------------------
