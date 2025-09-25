@@ -28,7 +28,7 @@ window.onload = reloadMessages;
 </head>
 <body>
 <header>
-<button class='buttonleft'>Annonces</button>
+<button class='buttonleft' onclick="window.location.href='/login'">Se connecter</button>
 <button class='buttonright'>Nous contacter</button>
 </header>
 <main>
@@ -46,6 +46,7 @@ window.onload = reloadMessages;
 
   server.send(200, "text/html", html);
 }
+
 
 // Endpoint AJAX : affichage des messages
 void handleMessages() {
