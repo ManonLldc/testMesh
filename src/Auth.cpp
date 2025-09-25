@@ -59,6 +59,7 @@ void handleLogin(WebServer &server) {
             server.send(303, "text/plain", "Redirecting...");
             return;
         } else {
+               delay(500); // anti brute force simple
             // Si login incorrect → erreur 401 (Unauthorized)
             server.send(401, "text/html", "<p>Login ou mot de passe incorrect</p>");
             return;
