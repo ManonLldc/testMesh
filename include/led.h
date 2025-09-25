@@ -12,4 +12,10 @@ void ledGradient(int wait);
 
 void ledOff();
 
+// Alarme feu
+void ledFireTruckSweep(int cycles, int wait);
+
+// Alarme inondation
+void ledFloodAlarm(int cycles, int wait);
+
 #endif

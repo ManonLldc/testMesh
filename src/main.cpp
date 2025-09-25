@@ -56,16 +56,25 @@ void loadHistory() {
 // Fonction appelée quand un message est reçu via mesh
 // ----------------------
 void receivedMsg(uint32_t from, String &msg) {
-  String m = String(from) + ": " + msg;
-  Serial.println(m);
-  messages[msgIndex] = m;
-  msgIndex = (msgIndex + 1) % MAX_MSG;
-  saveHistory();
-  for (int i = 0; i < 5; i++) {   // 5 cycles
-    ledGradient(80);
-  }
-  ledOff();
+    String m = String(from) + ": " + msg;
+    Serial.println(m);
+    messages[msgIndex] = m;
+    msgIndex = (msgIndex + 1) % MAX_MSG;
+    saveHistory();
+
+    // Vérifie le contenu du message
+    msg.toLowerCase();  // pour ignorer majuscules/minuscules
+
+    if (msg.indexOf("feu") >= 0) {
+        // Message contient "feu"
+        ledFireTruckSweep(5, 100);  // 5 cycles, x3 vitesse intégrée
+    } 
+    else if (msg.indexOf("inondation") >= 0) {
+        // Message contient "inondation"
+        ledFloodAlarm(5, 100);      // 5 cycles
+    }
 }
+
 
 // ----------------------
 // Génération de la page web
