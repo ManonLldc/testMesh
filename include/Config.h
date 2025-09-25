@@ -10,5 +10,5 @@
 // ----------------------
 // Point d'accès WiFi
 // ----------------------
-#define WIFI_AP_SSID "ESP32-VigilChat"
+#define WIFI_AP_SSID "ESP32-TEST"
 #define WIFI_AP_PASS "12345678"

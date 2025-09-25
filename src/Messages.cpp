@@ -1,5 +1,6 @@
 // Messages.cpp
 #include "Messages.h"
+#include "Motor.h"
 
 // Définition des variables globales
 String messages[MAX_MSG];
@@ -47,13 +48,22 @@ void loadHistory() {
 
 // Réception d’un message via mesh
 void receivedMsg(uint32_t from, String &msg) {
-  String mac = String(from, HEX);
+    String mac = String(from, HEX);
 
-  messages[msgIndex] = msg;
-  messagesFrom[msgIndex] = mac;
+    messages[msgIndex] = msg;
+    messagesFrom[msgIndex] = mac;
+    msgIndex = (msgIndex + 1) % MAX_MSG;
+    saveHistory();
 
-  msgIndex = (msgIndex + 1) % MAX_MSG;
-  saveHistory();
+    Serial.println(mac + ": " + msg);
 
-  Serial.println(mac + ": " + msg);
+    // Debug
+    Serial.print("Message transformé: '");
+    msg.toLowerCase();
+    Serial.println(msg + "'");
+    //if (msg.indexOf("feu") >= 0) {
+     //   motorOn();      // allume le moteur
+     //   delay(3000);    // le moteur tourne 3 secondes
+       // motorOff();     // arrêt moteur
+    //}
 }
