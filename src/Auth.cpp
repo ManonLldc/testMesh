@@ -5,11 +5,12 @@
 // ==========================
 // Constantes et variables
 // ==========================
-const String ADMIN_USER = "admin";  
+const String ADMIN_USER = "admin@admin";  
 // Nom d'utilisateur autorisé pour la connexion
 
 const String ADMIN_PASS_HASH = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";  
 // Hash SHA-256 du mot de passe (ici c'est le hash de "1234")
+// https://www.strongpasswordgenerator.org/fr/sha256-hash-generator/
 
 bool isLoggedIn = false;  
 // Indique si l'utilisateur est actuellement connecté (true) ou non (false)

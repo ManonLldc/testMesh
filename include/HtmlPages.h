@@ -2,7 +2,7 @@
 #define HTMLPAGES_H
 
 // Page de login
-const char LOGIN_PAGE[] PROGMEM = R"rawliteral(
+const char LOGIN_PAGE[] = R"rawliteral(
 <!doctype html>
 <html lang='fr'>
 <head>
@@ -42,8 +42,11 @@ window.onload = reloadMessages;
 </html>
 )rawliteral";
 
+// ==========================
 // Page admin
-const char ADMIN_PAGE[] PROGMEM = R"rawliteral(
+// ==========================
+
+const char ADMIN_PAGE[]  = R"rawliteral(
 <!doctype html>
 <html lang='fr'>
 <head>
