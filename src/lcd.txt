@@ -1,0 +1,8 @@
+#pragma once
+
+// Initialise l'écran OLED/LCD
+void lcdInit();
+
+// Rafraîchit l'affichage (appelé depuis loop)
+void lcdUpdate(uint32_t from, String msg);
+

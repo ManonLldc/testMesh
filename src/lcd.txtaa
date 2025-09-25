@@ -1,0 +1,20 @@
+#include <Arduino.h>
+#include <LiquidCrystal_I2C.h>
+#include "lcd.h"
+
+// Adresse I2C et dimensions de l’écran LCD 16x2
+// LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void lcdInit() {
+    lcd.init();        // Initialisation
+    lcd.backlight();   // Activer le rétroéclairage
+    // lcd.setCursor(0, 0);
+    // lcd.print("Carte");  // Ligne 1
+}
+
+void lcdUpdate(uint32_t from, String msg) {
+    lcd.setCursor(0, 0);
+    lcd.print(from);  
+    lcd.setCursor(0, 1);
+    lcd.print(msg);  // Ligne 2
+}
