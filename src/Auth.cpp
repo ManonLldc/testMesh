@@ -71,15 +71,16 @@ window.onload = reloadMessages;
 </head>
 <body>
 <header>
-<h2>Interface Admin</h2>
+<button class='buttonleft'>Plateforme</button>
+<button class='buttonright'>d'Authentification</button>
 </header>
 <main class='mainSign'>
 <div class='identification'>
-<p>Saisissez vos données</p>
+<p>Veuillez vous identifier</p>
 <form method='POST' action='/login' class='identificationForm'>
 <input type='text' placeholder='Votre adresse mail' class='identificationTA' name='user' minlength='4'>
 <input type='password' placeholder='Votre mot de passe' class='identificationTA' name='pass' minlength='4'>
-<input class='identificationButton' type='submit' value='Connexion'>
+<input class='identificationButton' type='submit' value='Se connecter'>
 </form>
 </div>
 </main>
@@ -105,7 +106,7 @@ void handleAdmin(WebServer &server) {
 <head>
 <meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>Connexion - Vigil</title>
+<title>Bienvenue - Vigil</title>
 <link rel="stylesheet" href="/css/reset.css">
 <link rel="stylesheet" href="/css/style.css">
 <script>
@@ -122,17 +123,17 @@ window.onload = reloadMessages;
 </head>
 <body>
 <header>
-<h2>Interface Admin</h2>
+<button class='buttonleft'>Annonces</button>
+<button class='buttonright'>Se connecter</button>
 </header>
-<main class='mainSign'>
-<div class='identification'>
-<p>Saisissez vos données</p>
-<form method='POST' action='/send' class='identificationForm'>
-<textarea placeholder='Votre adresse mail' class='identificationTA' name='Ident' minlength='6'></textarea>
-<textarea placeholder='Votre mot de passe' class='identificationTA' name='Password' minlength='6'></textarea>
-<input class='identificationButton' type='submit' value='S'inscrire'>
-</form>
+<main>
+<div class='containerul'>
+<ul class='chatlist'></ul>
 </div>
+<form method='POST' action='/send'>
+<textarea placeholder='Saisissez votre demande' class='chatbox' name='chatbox' minlength='2'></textarea>
+<input class='submit-button' type='submit' value='Envoyez'>
+</form>
 </main>
 </body>
 </html>
