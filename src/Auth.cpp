@@ -48,11 +48,44 @@ void handleLogin(WebServer &server) {
         }
     }
 
-    String html = "<form class='identificationTA' method='POST'>"
-                  "Utilisateur: <input name='user'><br>"
-                  "Mot de passe: <input type='password' name='pass'><br>"
-                  "<input type='submit' value='Se connecter'>"
-                  "</form>";
+    String html = R"rawliteral(
+<!doctype html>
+<html lang='fr'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Connexion - Vigil</title>
+<link rel="stylesheet" href="/css/reset.css">
+<link rel="stylesheet" href="/css/style.css">
+<script>
+function reloadMessages(){
+  fetch('/messages')
+    .then(response => response.text())
+    .then(data => {
+      document.querySelector('.chatlist').innerHTML = data;
+    });
+}
+setInterval(reloadMessages, 1000);
+window.onload = reloadMessages;
+</script>
+</head>
+<body>
+<header>
+<h2>Interface Admin</h2>
+</header>
+<main class='mainSign'>
+<div class='identification'>
+<p>Saisissez vos données</p>
+<form method='POST' action='/login' class='identificationForm'>
+<input type='text' placeholder='Votre adresse mail' class='identificationTA' name='user' minlength='4'>
+<input type='password' placeholder='Votre mot de passe' class='identificationTA' name='pass' minlength='4'>
+<input class='identificationButton' type='submit' value='Connexion'>
+</form>
+</div>
+</main>
+</body>
+</html>
+)rawliteral";
     server.send(200, "text/html", html);
 }
 
