@@ -3,32 +3,38 @@
 #include <WebServer.h>
 #include <painlessMesh.h>
 #include <LittleFS.h>
-#include "Config.h"     // <- paramètres réseau ici
-#include "Messages.h"   // <- gestion des messages
-#include "WebApp.h"     // <- serveur web
 
-// Objets globaux (partagés avec WebApp)
+#include "Config.h"
+#include "Messages.h"
+#include "WebApp.h"
+#include "Auth.h"  // <-- Inclut Auth.h
+
 painlessMesh mesh;
 WebServer server(80);
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  loadHistory();  // Recharge l’historique sauvegardé
+    loadHistory();
 
-  // Initialisation du mesh
-  mesh.init(MESH_SSID, MESH_PASS, MESH_PORT);
-  mesh.onReceive(&receivedMsg);
+    mesh.init(MESH_SSID, MESH_PASS, MESH_PORT);
+    mesh.onReceive(&receivedMsg);
 
-  // Création du point d'accès WiFi
-  WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASS);
-  Serial.println("IP: " + WiFi.softAPIP().toString());
+    WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASS);
+    Serial.println("IP: " + WiFi.softAPIP().toString());
 
-  // Configuration du serveur web
-  setupWebServer();
+    setupWebServer();
+
+    // Routes login/admin
+    server.on("/login", HTTP_GET, []() { handleLogin(server); });
+    server.on("/login", HTTP_POST, []() { handleLogin(server); });
+    server.on("/admin", HTTP_GET, []() { handleAdmin(server); });
+
+    server.begin();
+    Serial.println("Serveur HTTP démarré");
 }
 
 void loop() {
-  mesh.update();        // Mise à jour du réseau Mesh
-  server.handleClient(); // Gestion des requêtes HTTP
+    mesh.update();
+    server.handleClient();
 }
